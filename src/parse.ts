@@ -1,11 +1,7 @@
 import { CharStreams, CommonTokenStream } from "antlr4ts";
 import { ParseTreeListener, ParseTreeWalker } from "antlr4ts/tree";
-import {
-  ContractDefinitionContext,
-  SolidityLexer,
-  SolidityParser,
-  SolidityParserListener,
-} from "..";
+import { SolidityLexer, SolidityParser, SolidityParserListener } from "..";
+import { ImportDirectiveContext } from "../dist/SolidityParser";
 
 interface ParseOptions {
   basePath?: string;
@@ -19,7 +15,9 @@ export function parse(source: string, options: ParseOptions = {}) {
   const parser = new SolidityParser(new CommonTokenStream(lexer));
 
   class Listener implements SolidityParserListener {
-    enterContractDefinition(context: ContractDefinitionContext) {}
+    enterImportDirective(context: ImportDirectiveContext) {
+      console.log(context.path()?.text);
+    }
   }
 
   const listener = <ParseTreeListener>new Listener();
