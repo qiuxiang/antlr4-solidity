@@ -1,0 +1,12 @@
+{
+  "files": ["index.ts"],
+  "compilerOptions": {
+    "strict": true,
+    "target": "esnext",
+    "module": "commonjs",
+    "declaration": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "incremental": true
+  }
+}

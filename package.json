@@ -1,0 +1,20 @@
+{
+  "name": "antlr4-solidity",
+  "scripts": {
+    "build": "npx antlr4ts -Xexact-output-dir -o dist -visitor src/SolidityLexer.g4 && npx antlr4ts -Xexact-output-dir -o dist -visitor src/SolidityParser.g4 && tsc",
+    "esbuild": "esbuild --sourcemap --bundle --external:antlr4ts --platform=node --outdir=dist",
+    "test": "npm run esbuild test/test.ts && node --enable-source-maps node_modules/jasmine/bin/jasmine.js dist/test.js"
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.d.ts"
+  ],
+  "dependencies": {
+    "antlr4ts": "^0.5.0-alpha.4"
+  },
+  "devDependencies": {
+    "@types/jasmine": "^3.10.3",
+    "antlr4ts-cli": "^0.5.0-alpha.4",
+    "jasmine": "^4.0.2"
+  }
+}
