@@ -3,8 +3,11 @@ import { join } from "path";
 import { parse } from "..";
 
 it("parse", async () => {
-  console.log("parse");
-  parse(await getContract("erc20.sol"));
+  const result = parse(await getContract("erc20.sol"), {
+    basePath: join(__dirname, ".."),
+    includePath: "node_modules",
+  });
+  console.log(result);
 });
 
 async function getContract(name: string) {
