@@ -6,6 +6,8 @@
     "test": "npm run esbuild test/test.ts && node --enable-source-maps node_modules/jasmine/bin/jasmine.js dist/test.js"
   },
   "files": [
+    "index.ts",
+    "index.d.ts",
     "dist/*.js",
     "dist/*.d.ts"
   ],
