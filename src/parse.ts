@@ -1,46 +1,81 @@
-import { CharStreams, CommonTokenStream, ParserRuleContext } from "antlr4ts";
+import { CharStreams, CommonTokenStream } from "antlr4ts";
 import { ParseTreeListener, ParseTreeWalker } from "antlr4ts/tree";
+import { existsSync, readFileSync } from "fs";
+import { dirname, isAbsolute, join } from "path";
 import { SolidityLexer, SolidityParser, SolidityParserListener } from "..";
 import { ImportDirectiveContext } from "../dist/SolidityParser";
 
 interface ParseOptions {
-  basePath?: string;
+  basePath: string;
   includePath?: string;
   remapping?: Record<string, string>;
-  import?: (path: string) => string;
+  import?: (path: string, options: ParseOptions) => [string, string];
 }
 
-interface ParseResult {
-  imports: string[];
+export function parse(sourcePath: string, options: ParseOptions) {
+  const sources = <Record<string, string>>{};
+  _parse(sourcePath, options, sources);
+  return { sources };
 }
 
-export function parse(source: string, options: ParseOptions = {}) {
+export function _parse(
+  sourcePath: string,
+  options: ParseOptions,
+  sources: Record<string, string>
+): void {
+  const imports = <string[]>[];
+  const importer = options.import ?? defaultImporter;
+  const [absoluteSourcePath, source] = importer(sourcePath, options);
+  sources[absoluteSourcePath] = source;
+
   const lexer = new SolidityLexer(CharStreams.fromString(source));
   const parser = new SolidityParser(new CommonTokenStream(lexer));
 
-  const imports = <string[]>[];
-
   class Listener implements SolidityParserListener {
     enterImportDirective(context: ImportDirectiveContext) {
-      imports.push(context.path()?.text ?? "");
-    }
-
-    enterEveryRule(context: ParserRuleContext) {
-      console.log(context.start.tokenIndex);
-      console.log(
-        context.start.startIndex,
-        context.stop?.stopIndex,
-        context.text
-      );
+      const path = context.path()?.text ?? "";
+      imports.push(path.replace(/['"]/g, ""));
     }
   }
 
   const listener = <ParseTreeListener>new Listener();
   ParseTreeWalker.DEFAULT.walk(listener, parser.sourceUnit());
 
-  return { imports };
+  for (const importPath of imports) {
+    try {
+      const basePath = dirname(absoluteSourcePath);
+      _parse(importPath, { ...options, basePath }, sources);
+    } catch (_) {}
+  }
 }
 
-export function defaultImport(path: string) {
+export function defaultImporter(path: string, options: ParseOptions) {
+  const absolutePath = getPath(path, options);
+  return [absolutePath, readFileSync(absolutePath).toString()];
+}
+
+export function getPath(path: string, options: ParseOptions) {
+  const { basePath, includePath, remapping = {} } = options;
+
+  for (const key in remapping) {
+    if (path.startsWith(key)) {
+      path = path.replace(new RegExp(`^${key}`), remapping[key]);
+      break;
+    }
+  }
+
+  if (isAbsolute(path)) {
+    return path;
+  }
+
+  let absolutePath = join(basePath, path);
+  if (existsSync(absolutePath)) {
+    return absolutePath;
+  }
+
+  if (includePath) {
+    return (absolutePath = join(includePath, path));
+  }
+
   return path;
 }
