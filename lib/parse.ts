@@ -3,7 +3,7 @@ import { ParseTreeListener, ParseTreeWalker } from "antlr4ts/tree";
 import { existsSync, readFileSync } from "fs";
 import { dirname, isAbsolute, join } from "path";
 import { SolidityLexer, SolidityParser, SolidityParserListener } from "..";
-import { ImportDirectiveContext } from "../dist/SolidityParser";
+import { ImportDirectiveContext } from "./SolidityParser";
 
 interface ParseOptions {
   basePath: string;
