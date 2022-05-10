@@ -3,7 +3,7 @@
   "scripts": {
     "build": "npx antlr4ts -Xexact-output-dir -o lib -visitor grammar/SolidityLexer.g4 && npx antlr4ts -Xexact-output-dir -o lib -visitor grammar/SolidityParser.g4 && tsc",
     "esbuild": "esbuild --sourcemap --bundle --external:antlr4ts --platform=node --outdir=dist",
-    "test": "npm run esbuild test/test.ts && node --enable-source-maps node_modules/jasmine/bin/jasmine.js dist/test.js"
+    "test": "npm run esbuild test/test.ts && node --enable-source-maps --inspect node_modules/jasmine/bin/jasmine.js dist/test.js"
   },
   "files": [
     "index.js",

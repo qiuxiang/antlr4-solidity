@@ -5,28 +5,31 @@ import { dirname, isAbsolute, join } from "path";
 import { SolidityLexer, SolidityParser, SolidityParserListener } from "..";
 import { ImportDirectiveContext } from "./SolidityParser";
 
-interface ParseOptions {
+export interface ParseOptions {
   basePath: string;
   includePath?: string;
   remapping?: Record<string, string>;
   import?: (path: string, options: ParseOptions) => [string, string];
 }
 
-export function parse(sourcePath: string, options: ParseOptions) {
+export function parse(
+  sourcePath: string,
+  source: string,
+  options: ParseOptions
+) {
   const sources = <Record<string, string>>{};
-  _parse(sourcePath, options, sources);
+  _parse(sourcePath, source, { ...options }, sources);
   return { sources };
 }
 
 export function _parse(
   sourcePath: string,
+  source: string,
   options: ParseOptions,
   sources: Record<string, string>
 ): void {
   const imports = <string[]>[];
-  const importer = options.import ?? defaultImporter;
-  const [absoluteSourcePath, source] = importer(sourcePath, options);
-  sources[absoluteSourcePath] = source;
+  sources[sourcePath] = source;
 
   const lexer = new SolidityLexer(CharStreams.fromString(source));
   const parser = new SolidityParser(new CommonTokenStream(lexer));
@@ -41,20 +44,24 @@ export function _parse(
   const listener = <ParseTreeListener>new Listener();
   ParseTreeWalker.DEFAULT.walk(listener, parser.sourceUnit());
 
+  const importer = options.import ?? defaultImporter;
   for (const importPath of imports) {
     try {
-      const basePath = dirname(absoluteSourcePath);
-      _parse(importPath, { ...options, basePath }, sources);
+      const path = importPath.match(/\.\.?\//)
+        ? join(dirname(sourcePath), importPath)
+        : importPath;
+      const [_, source] = importer(path, options);
+      _parse(path, source, options, sources);
     } catch (_) {}
   }
 }
 
 export function defaultImporter(path: string, options: ParseOptions) {
-  const absolutePath = getPath(path, options);
+  const absolutePath = getAbsoletePath(path, options);
   return [absolutePath, readFileSync(absolutePath).toString()];
 }
 
-export function getPath(path: string, options: ParseOptions) {
+export function getAbsoletePath(path: string, options: ParseOptions) {
   const { basePath, includePath, remapping = {} } = options;
 
   for (const key in remapping) {
