@@ -50,8 +50,10 @@ export function _parse(
       const path = importPath.match(/\.\.?\//)
         ? join(dirname(sourcePath), importPath)
         : importPath;
-      const [_, source] = importer(path, options);
-      _parse(path, source, options, sources);
+      if (!sources[path]) {
+        const [_, source] = importer(path, options);
+        _parse(path, source, options, sources);
+      }
     } catch (_) {}
   }
 }
