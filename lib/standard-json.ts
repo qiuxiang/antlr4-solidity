@@ -1,15 +1,10 @@
-import { parse, ParseOptions } from "./parse";
+import { ParseResult } from "./parse";
 
-export function getStandardJsonInput(
-  sourcePath: string,
-  source: string,
-  options: ParseOptions
-) {
-  const { sources } = parse(sourcePath, source, options);
+export function toInputJson(files: Record<string, ParseResult>) {
   return {
     language: "Solidity",
     sources: Object.fromEntries(
-      Object.keys(sources).map((i) => [i, { content: sources[i] }])
+      Object.keys(files).map((i) => [i, { content: files[i].content }])
     ),
     settings: { outputSelection: { "*": { "": ["ast"] } } },
   };

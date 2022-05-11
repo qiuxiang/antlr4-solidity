@@ -1,16 +1,10 @@
-import { join } from "path";
-import { defaultImporter, getStandardJsonInput } from "..";
-
-const parseOptions = {
-  basePath: join(__dirname, ".."),
-  includePath: join(__dirname, "..", "node_modules"),
-};
+import { defaultImporter, parse, toInputJson } from "..";
+import { parseOptions } from "./parse.test";
 
 it("standard json", async () => {
-  const [absolutePath, source] = defaultImporter(
-    "test/contracts/erc20.sol",
-    parseOptions
-  );
-  const result = getStandardJsonInput(absolutePath, source, parseOptions);
-  console.log(result);
+  const filename = "test/contracts/erc20.sol";
+  const [_, content] = defaultImporter(filename, parseOptions);
+  const json = toInputJson(parse(filename, content, parseOptions));
+  console.log([json]);
+  // require("fs/promises").writeFile("input.json", JSON.stringify(json));
 });

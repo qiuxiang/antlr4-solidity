@@ -12,26 +12,37 @@ export interface ParseOptions {
   import?: (path: string, options: ParseOptions) => [string, string];
 }
 
+export interface ParseResult {
+  path: string;
+  content: string;
+}
+
 export function parse(
-  sourcePath: string,
-  source: string,
+  filename: string,
+  content: string,
   options: ParseOptions
 ) {
-  const sources = <Record<string, string>>{};
-  _parse(sourcePath, source, { ...options }, sources);
-  return { sources };
+  const files = <Record<string, ParseResult>>{};
+  _parse(filename, content, { ...options }, files);
+  return files;
 }
 
 export function _parse(
-  sourcePath: string,
-  source: string,
+  filename: string,
+  content: string,
   options: ParseOptions,
-  sources: Record<string, string>
+  files: Record<string, ParseResult>
 ): void {
+  const dir = dirname(filename);
   const imports = <string[]>[];
-  sources[sourcePath] = source;
+  if (!files[filename]) {
+    files[filename] = {
+      path: getAbsoletePath(filename, options),
+      content,
+    };
+  }
 
-  const lexer = new SolidityLexer(CharStreams.fromString(source));
+  const lexer = new SolidityLexer(CharStreams.fromString(content));
   const parser = new SolidityParser(new CommonTokenStream(lexer));
 
   class Listener implements SolidityParserListener {
@@ -47,12 +58,13 @@ export function _parse(
   const importer = options.import ?? defaultImporter;
   for (const importPath of imports) {
     try {
-      const path = importPath.match(/\.\.?\//)
-        ? join(dirname(sourcePath), importPath)
+      const filename = importPath.match(/\.\.?\//)
+        ? join(dir, importPath)
         : importPath;
-      if (!sources[path]) {
-        const [_, source] = importer(path, options);
-        _parse(path, source, options, sources);
+      if (!files[filename]) {
+        const [path, content] = importer(filename, options);
+        files[filename] = { path, content };
+        _parse(filename, content, options, files);
       }
     } catch (_) {}
   }
@@ -83,7 +95,9 @@ export function getAbsoletePath(path: string, options: ParseOptions) {
   }
 
   if (includePath) {
-    return (absolutePath = join(includePath, path));
+    return isAbsolute(includePath)
+      ? join(includePath, path)
+      : join(basePath, includePath, path);
   }
 
   return path;
