@@ -11,9 +11,6 @@ export function getStandardJsonInput(
     sources: Object.fromEntries(
       Object.keys(sources).map((i) => [i, { content: sources[i] }])
     ),
-    settings: {
-      stopAfter: "parsing",
-      outputSelection: { "*": { "": ["ast"] } },
-    },
+    settings: { outputSelection: { "*": { "": ["ast"] } } },
   };
 }
